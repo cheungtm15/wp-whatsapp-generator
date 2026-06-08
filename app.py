@@ -7,7 +7,7 @@ import pandas as pd
 # 1. Page Config & Layout
 st.set_page_config(page_title="WP WhatsApp Generator", page_icon="💬", layout="wide")
 
-# 2. SIDEBAR STYLE NAVIGATION (Changes the UI style completely)
+# 2. SIDEBAR NAVIGATION
 st.sidebar.title("⚙️ Control Panel")
 st.sidebar.write("Configure your settings here before uploading your file.")
 
