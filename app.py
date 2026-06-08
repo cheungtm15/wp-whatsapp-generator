@@ -8,9 +8,6 @@ import pandas as pd
 st.set_page_config(page_title="WP WhatsApp Generator", page_icon="💬", layout="wide")
 
 # 2. SIDEBAR NAVIGATION
-st.sidebar.title("⚙️ Control Panel")
-st.sidebar.write("Configure your settings here before uploading your file.")
-
 message_type = st.sidebar.selectbox(
     "Select Message Template:",
     options=[
@@ -53,6 +50,7 @@ if uploaded_file is not None:
             tel_idx = headers.index("Sales Order (Remarks) Tel") + 1
             po_idx = headers.index("Sales Order Cus. P.O. No.") + 1
             etd_idx = headers.index("Sales Order ETD") + 1 if "Sales Order ETD" in headers else None
+            city_idx = headers.index("Sales Order (Remarks) City") + 1 if "Sales Order (Remarks) City" in headers else None
             
             # Link Column setup
             if "WhatsApp Link" in headers:
@@ -67,6 +65,7 @@ if uploaded_file is not None:
                 tel_val = ws.cell(row=row_idx, column=tel_idx).value
                 po_val = ws.cell(row=row_idx, column=po_idx).value
                 etd_val = ws.cell(row=row_idx, column=etd_idx).value if etd_idx else None
+                city_val = str(ws.cell(row=row_idx, column=city_idx).value).strip() if city_idx else ""
                 
                 if tel_val is not None:
                     # Phone clean
@@ -85,9 +84,18 @@ if uploaded_file is not None:
                         except:
                             date_str = str(etd_val).strip()
 
-                    # Message Generation based on the chosen Sidebar style option
+                    # Message Generation logic
                     if "🚚 Today's Delivery" in message_type:
-                        text = f"Hello, Thank you for your order with WP at home\nPlease be informed that we will deliver your order {po_str} today, between 11:00 am - 6:00 pm.\xa0\nThank you and enjoy"
+                        # Automated check: If city field equals '自取', override with the Self Pick-up Template
+                        if city_val == "自取":
+                            text = (
+                                f"Hello, your order ({po_str}) is ready for pick up. Thank you\n\n"
+                                f"Address:\n"
+                                f"Unit 12-14, 23/F, Harbour Industrial Centre, 10 Lee Hing St. Ap Lei Chau, HK\n\n"
+                                f"https://goo.gl/maps/7agapefxV8ohRnTKA"
+                            )
+                        else:
+                            text = f"Hello, Thank you for your order with WP at home\nPlease be informed that we will deliver your order {po_str} today, between 11:00 am - 6:00 pm.\xa0\nThank you and enjoy"
                     else:
                         text = (
                             f"Dear Customer,\n\xa0\nThank you for your order!\n\n"
@@ -110,7 +118,7 @@ if uploaded_file is not None:
             wb.save(out_buffer)
             out_buffer.seek(0)
             
-            st.success(f"🎉 Created {count} WhatsApp links successfully using the selected sidebar template!")
+            st.success(f"🎉 Created {count} WhatsApp links successfully using the selected template rules!")
             st.download_button(
                 label="📥 Download Updated Spreadsheet",
                 data=out_buffer,
