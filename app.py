@@ -8,9 +8,9 @@ import pandas as pd
 st.set_page_config(page_title="WP WhatsApp Generator", page_icon="💬")
 st.title("💬 WP WhatsApp Link Generator")
 
-st.markdown("---") # Visual divider line
+st.markdown("---") 
 
-# 2. THE TOGGLE (Explicitly placed at the top)
+# 2. THE TOGGLE 
 st.subheader("Step 1: Choose Your Message Template")
 message_type = st.radio(
     "Which notification text should be generated?",
@@ -109,6 +109,30 @@ if uploaded_file is not None:
                 data=out_buffer,
                 file_name=f"processed_{uploaded_file.name}",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            
+            # Reconstruct preview data safely to prevent Arrow Type Errors
+            data = []
+            updated_headers = [str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]]
+            for row_idx in range(2, ws.max_row + 1):
+                row_vals = [ws.cell(row=row_idx, column=c_idx).value for c_idx in range(1, ws.max_column + 1)]
+                if len(row_vals) >= link_col_idx:
+                    h_target = ws.cell(row=row_idx, column=link_col_idx).hyperlink
+                    row_vals[link_col_idx - 1] = h_target.target if h_target else ""
+                # Convert all items to clean strings to prevent backend preview crashes
+                row_vals = ["" if x is None else str(x) for x in row_vals]
+                data.append(row_vals)
+                
+            preview_df = pd.DataFrame(data, columns=updated_headers)
+            
+            st.markdown("---")
+            st.subheader("👀 Generated Data Preview")
+            st.dataframe(
+                preview_df,
+                column_config={
+                    "WhatsApp Link": st.column_config.LinkColumn("WhatsApp Link", display_text="Test Link")
+                },
+                width="stretch"  # Updated configuration fix matching modern Streamlit spec
             )
             
     except Exception as e:
