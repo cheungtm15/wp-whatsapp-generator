@@ -5,15 +5,14 @@ import io
 import pandas as pd
 
 # 1. Page Config & Layout
-st.set_page_config(page_title="WP WhatsApp Generator", page_icon="💬")
-st.title("💬 WP WhatsApp Link Generator")
+st.set_page_config(page_title="WP WhatsApp Generator", page_icon="💬", layout="wide")
 
-st.markdown("---") 
+# 2. SIDEBAR STYLE NAVIGATION (Changes the UI style completely)
+st.sidebar.title("⚙️ Control Panel")
+st.sidebar.write("Configure your settings here before uploading your file.")
 
-# 2. THE TOGGLE 
-st.subheader("Step 1: Choose Your Message Template")
-message_type = st.radio(
-    "Which notification text should be generated?",
+message_type = st.sidebar.selectbox(
+    "Select Message Template:",
     options=[
         "🚚 Today's Delivery Reminder (Short version with Order No.)",
         "📅 Future Delivery Confirmation (Long version with Delivery Date)"
@@ -21,10 +20,18 @@ message_type = st.radio(
     index=0
 )
 
-st.markdown("---")
+st.sidebar.markdown("---")
+st.sidebar.info(
+    "💡 **How to use:**\n"
+    "1. Pick a template here on the left.\n"
+    "2. Drop your file in the main window.\n"
+    "3. Download your processed file!"
+)
 
-# 3. File Uploader
-st.subheader("Step 2: Upload Spreadsheet")
+# 3. MAIN CONTENT AREA
+st.title("💬 WP WhatsApp Link Generator")
+st.write("Upload your spreadsheet below to append a custom column with clickable WhatsApp communication links.")
+
 uploaded_file = st.file_uploader("Upload 'New Orders.xlsx' or 'Today delivery.xlsx'", type=["xlsx"])
 
 if uploaded_file is not None:
@@ -78,7 +85,7 @@ if uploaded_file is not None:
                         except:
                             date_str = str(etd_val).strip()
 
-                    # Message Generation
+                    # Message Generation based on the chosen Sidebar style option
                     if "🚚 Today's Delivery" in message_type:
                         text = f"Hello, Thank you for your order with WP at home\nPlease be informed that we will deliver your order {po_str} today, between 11:00 am - 6:00 pm.\xa0\nThank you and enjoy"
                     else:
@@ -103,7 +110,7 @@ if uploaded_file is not None:
             wb.save(out_buffer)
             out_buffer.seek(0)
             
-            st.success(f"🎉 Created {count} WhatsApp links successfully!")
+            st.success(f"🎉 Created {count} WhatsApp links successfully using the selected sidebar template!")
             st.download_button(
                 label="📥 Download Updated Spreadsheet",
                 data=out_buffer,
@@ -111,7 +118,7 @@ if uploaded_file is not None:
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             
-            # Reconstruct preview data safely to prevent Arrow Type Errors
+            # Reconstruct data safely as clean string representations for visual previewing
             data = []
             updated_headers = [str(cell.value).strip() if cell.value is not None else "" for cell in ws[1]]
             for row_idx in range(2, ws.max_row + 1):
@@ -119,7 +126,6 @@ if uploaded_file is not None:
                 if len(row_vals) >= link_col_idx:
                     h_target = ws.cell(row=row_idx, column=link_col_idx).hyperlink
                     row_vals[link_col_idx - 1] = h_target.target if h_target else ""
-                # Convert all items to clean strings to prevent backend preview crashes
                 row_vals = ["" if x is None else str(x) for x in row_vals]
                 data.append(row_vals)
                 
@@ -132,7 +138,7 @@ if uploaded_file is not None:
                 column_config={
                     "WhatsApp Link": st.column_config.LinkColumn("WhatsApp Link", display_text="Test Link")
                 },
-                width="stretch"  # Updated configuration fix matching modern Streamlit spec
+                width="stretch"
             )
             
     except Exception as e:
